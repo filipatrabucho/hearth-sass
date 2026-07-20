@@ -1,0 +1,61 @@
+.form {
+  margin-top: 24px;
+  max-width: 640px;
+}
+
+.colorRow {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 8px;
+}
+
+.colorField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.colorField input[type='color'] {
+  width: 56px;
+  height: 40px;
+  border: 1px solid var(--border-md);
+  border-radius: var(--radius-sm);
+  background: none;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.previewHint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+}
+
+.input {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-md);
+  border-radius: var(--radius-sm);
+  color: var(--white);
+  font-size: 14px;
+}
+.input:focus { outline: none; border-color: var(--purple); }
+
+.ok { color: var(--mint); font-size: 13px; margin-top: 14px; }
+.err { color: var(--red); font-size: 13px; margin-top: 14px; }

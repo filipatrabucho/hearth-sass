@@ -1,0 +1,17 @@
+.empty {
+  border: 1px dashed var(--border-md);
+  border-radius: var(--radius-lg);
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-mid);
+}
+.emptyIcon { font-size: 32px; display: block; margin-bottom: 12px; }
+.emptyHint { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+
+.frameWrap {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  height: 600px;
+}
+.frame { width: 100%; height: 100%; border: none; }

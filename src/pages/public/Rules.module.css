@@ -1,0 +1,96 @@
+.wrap {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 64px 24px 100px;
+}
+
+.rulesList {
+  list-style: none;
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ruleItem {
+  display: flex;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ruleNumber {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--purple);
+  flex-shrink: 0;
+  width: 36px;
+}
+
+.ruleItem h3 { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.ruleItem p { font-size: 14px; color: var(--text-mid); }
+
+.tiersSection { margin-top: 72px; }
+.tiersTitle {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.tierLadder {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin: 32px 0;
+}
+
+.tierCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--tier-color);
+  border-radius: var(--radius-md);
+  padding: 18px 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.tierDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tier-color);
+  margin-bottom: 4px;
+}
+
+.tierCard strong { font-family: var(--font-display); font-size: 14px; }
+.tierMin { font-size: 12px; color: var(--text-muted); }
+
+.myProgress {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.myProgressLabel { font-size: 14px; margin-bottom: 12px; }
+
+.progressTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.progressFill { height: 100%; border-radius: 999px; transition: width 0.3s; }
+
+@media (max-width: 700px) {
+  .tierLadder { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 460px) {
+  .tierLadder { grid-template-columns: repeat(2, 1fr); }
+}

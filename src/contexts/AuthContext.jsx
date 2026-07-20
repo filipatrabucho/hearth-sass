@@ -35,13 +35,13 @@ export function AuthProvider({ children }) {
 
       const { data: memberships } = await supabase
         .from('workspace_members')
-        .select('role, workspace:workspaces(id, name, plan, discord_guild_id)')
+        .select('role, invites_count, workspace:workspaces(*)')
         .eq('profile_id', user.id)
         .eq('status', 'active')
 
       const ws = (memberships || [])
         .filter((m) => m.workspace)
-        .map((m) => ({ ...m.workspace, myRole: m.role }))
+        .map((m) => ({ ...m.workspace, myRole: m.role, invites_count: m.invites_count }))
       setWorkspaces(ws)
 
       const saved = localStorage.getItem(CURRENT_WORKSPACE_KEY)
@@ -122,6 +122,10 @@ export function AuthProvider({ children }) {
     return callFunction('invite-staff', { workspaceId, email, role })
   }
 
+  async function syncWorkspace({ workspaceId }) {
+    return callFunction('sync-workspace', { workspaceId })
+  }
+
   const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId) || null
 
   const value = {
@@ -137,6 +141,7 @@ export function AuthProvider({ children }) {
     signOut,
     createWorkspace,
     inviteStaff,
+    syncWorkspace,
     refreshWorkspaces: () => session?.user && loadProfileAndWorkspaces(session.user),
   }
 

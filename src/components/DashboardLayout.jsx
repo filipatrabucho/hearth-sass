@@ -10,6 +10,14 @@ const NAV_ITEMS = [
   { to: '/dashboard/events', icon: '🎟️', label: 'Eventos' },
   { to: '/dashboard/tickets', icon: '💬', label: 'Tickets' },
   { to: '/dashboard/xp', icon: '🎮', label: 'XP & Níveis' },
+  { to: '/dashboard/posts', icon: '📰', label: 'Publicações' },
+  { to: '/dashboard/updates', icon: '🗓️', label: 'Updates' },
+]
+
+const SETTINGS_ITEMS = [
+  { to: '/dashboard/settings/team', icon: '👤', label: 'Equipa' },
+  { to: '/dashboard/settings/branding', icon: '🎨', label: 'Identidade visual' },
+  { to: '/dashboard/settings/welcome', icon: '👋', label: 'Welcome flow' },
 ]
 
 export function DashboardLayout() {
@@ -57,14 +65,17 @@ export function DashboardLayout() {
 
           <div className={styles.navDivider} />
 
-          <NavLink
-            to="/dashboard/settings/team"
-            onClick={() => setMobileOpen(false)}
-            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
-          >
-            <span className={styles.navIcon} aria-hidden="true">⚙️</span>
-            Definições
-          </NavLink>
+          {SETTINGS_ITEMS.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+            >
+              <span className={styles.navIcon} aria-hidden="true">{item.icon}</span>
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
       </aside>
 

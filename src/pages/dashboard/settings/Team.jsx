@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Fragment } from 'react'
 import { supabase } from '../../../lib/supabaseClient'
 import { useAuth } from '../../../contexts/AuthContext'
 import styles from './Team.module.css'
@@ -13,12 +13,16 @@ export function Team() {
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState(null) // { type: 'ok' | 'err', text }
 
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({ public_title: '', bio: '', show_on_team_page: false })
+  const [savingProfile, setSavingProfile] = useState(false)
+
   const loadMembers = useCallback(async () => {
     if (!currentWorkspace) return
     setLoading(true)
     const { data } = await supabase
       .from('workspace_members')
-      .select('id, email, role, status, invited_at, joined_at')
+      .select('id, email, role, status, invited_at, joined_at, public_title, bio, show_on_team_page')
       .eq('workspace_id', currentWorkspace.id)
       .order('invited_at', { ascending: true })
     setMembers(data || [])
@@ -41,6 +45,26 @@ export function Team() {
       setFeedback({ type: 'err', text: err.message || 'Não foi possível enviar o convite.' })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  function startEdit(m) {
+    setEditingId(m.id)
+    setEditForm({
+      public_title: m.public_title || '',
+      bio: m.bio || '',
+      show_on_team_page: m.show_on_team_page || false,
+    })
+  }
+
+  async function saveProfile(id) {
+    setSavingProfile(true)
+    try {
+      await supabase.from('workspace_members').update(editForm).eq('id', id)
+      setEditingId(null)
+      loadMembers()
+    } finally {
+      setSavingProfile(false)
     }
   }
 
@@ -96,21 +120,72 @@ export function Team() {
               <th>Email</th>
               <th>Cargo</th>
               <th>Estado</th>
+              <th>Página /equipa</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {members.map((m) => (
-              <tr key={m.id}>
-                <td>{m.email}</td>
-                <td><span className={styles.roleTag}>{m.role}</span></td>
-                <td>
-                  {m.status === 'active' ? (
-                    <span className={styles.statusActive}>● Ativo</span>
-                  ) : (
-                    <span className={styles.statusInvited}>○ Convidado</span>
-                  )}
-                </td>
-              </tr>
+              <Fragment key={m.id}>
+                <tr>
+                  <td>{m.email}</td>
+                  <td><span className={styles.roleTag}>{m.role}</span></td>
+                  <td>
+                    {m.status === 'active' ? (
+                      <span className={styles.statusActive}>● Ativo</span>
+                    ) : (
+                      <span className={styles.statusInvited}>○ Convidado</span>
+                    )}
+                  </td>
+                  <td>{m.show_on_team_page ? 'Visível' : 'Oculto'}</td>
+                  <td>
+                    {m.status === 'active' && (
+                      <button
+                        className="btn-secondary"
+                        style={{ padding: '4px 10px', fontSize: 12 }}
+                        onClick={() => (editingId === m.id ? setEditingId(null) : startEdit(m))}
+                      >
+                        {editingId === m.id ? 'Fechar' : 'Editar'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+                {editingId === m.id && (
+                  <tr>
+                    <td colSpan={5}>
+                      <div className={styles.editPanel}>
+                        <div className={styles.field}>
+                          <label className={styles.label}>Cargo público (ex: "Community Manager")</label>
+                          <input
+                            className={styles.input}
+                            value={editForm.public_title}
+                            onChange={(e) => setEditForm((f) => ({ ...f, public_title: e.target.value }))}
+                          />
+                        </div>
+                        <div className={styles.field}>
+                          <label className={styles.label}>Bio curta</label>
+                          <input
+                            className={styles.input}
+                            value={editForm.bio}
+                            onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))}
+                          />
+                        </div>
+                        <label className={styles.checkboxLabel}>
+                          <input
+                            type="checkbox"
+                            checked={editForm.show_on_team_page}
+                            onChange={(e) => setEditForm((f) => ({ ...f, show_on_team_page: e.target.checked }))}
+                          />
+                          Mostrar em /equipa
+                        </label>
+                        <button className="btn-primary" disabled={savingProfile} onClick={() => saveProfile(m.id)}>
+                          {savingProfile ? 'A guardar…' : 'Guardar'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>

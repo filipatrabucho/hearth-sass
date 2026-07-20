@@ -1,0 +1,29 @@
+.wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 64px 24px 100px;
+}
+
+.form { margin-top: 32px; display: flex; flex-direction: column; gap: 18px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.label { font-size: 13px; font-weight: 500; color: var(--text-mid); }
+
+.input, .textarea {
+  background: var(--card);
+  border: 1px solid var(--border-md);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  color: var(--white);
+  font-size: 14px;
+}
+.input:focus, .textarea:focus { outline: none; border-color: var(--purple); }
+.textarea { resize: vertical; font-family: var(--font-body); }
+
+.ok { color: var(--mint); font-size: 14px; }
+.err { color: var(--red); font-size: 14px; }
+
+@media (max-width: 560px) {
+  .row { grid-template-columns: 1fr; }
+}
