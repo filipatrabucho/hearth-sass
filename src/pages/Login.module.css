@@ -1,0 +1,63 @@
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card);
+  border: 1px solid var(--border-md);
+  border-radius: var(--radius-lg);
+  padding: 40px 32px;
+  text-align: center;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  margin-bottom: 28px;
+}
+
+.logoMark {
+  width: 30px;
+  height: 30px;
+  background: var(--purple);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--text-mid);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.discordBtn {
+  width: 100%;
+  background: #5865F2;
+}
+.discordBtn:hover { background: #4a55d9; }
+
+.error {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--red);
+}
