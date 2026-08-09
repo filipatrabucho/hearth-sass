@@ -1,12 +1,13 @@
-import { ComingSoon } from './ComingSoon'
+import { UpgradeNotice } from '../../components/dashboard/UpgradeNotice'
+import { minPlanLabel } from '../../lib/plans'
 
 export function XpLevels() {
   return (
-    <ComingSoon
+    <UpgradeNotice
       icon="🎮"
       title="XP & Níveis"
       sub="Sistema de progressão com recompensas configuráveis — roles, canais exclusivos e badges."
-      placeholder="A configuração de XP e recompensas vai aparecer aqui."
+      requiredPlanLabel={minPlanLabel('xp_levels')}
     />
   )
 }

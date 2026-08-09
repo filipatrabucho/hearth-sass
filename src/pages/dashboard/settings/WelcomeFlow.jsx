@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabaseClient'
 import { useAuth } from '../../../contexts/AuthContext'
+import { UpgradeNotice } from '../../../components/dashboard/UpgradeNotice'
+import { hasFeature, minPlanLabel } from '../../../lib/plans'
 import styles from './Branding.module.css'
 
 const DEFAULTS = {
@@ -52,6 +54,17 @@ export function WelcomeFlow() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (currentWorkspace && !hasFeature(currentWorkspace.plan, 'welcome_flow')) {
+    return (
+      <UpgradeNotice
+        icon="👋"
+        title="Welcome flow"
+        sub="Mensagem de boas-vindas personalizada, cargo automático e verificação antes de aceder ao servidor."
+        requiredPlanLabel={minPlanLabel('welcome_flow')}
+      />
+    )
   }
 
   if (!form) return null

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePublicWorkspace } from '../../contexts/PublicWorkspaceContext'
+import { supabase } from '../../lib/supabaseClient'
 import { INVITE_TIERS, getTierForInvites, getNextTier } from '../../lib/inviteTiers'
 import styles from './Rules.module.css'
 
@@ -13,10 +15,21 @@ const RULES = [
 
 export function Rules() {
   const { workspace } = usePublicWorkspace()
-  const { workspaces } = useAuth()
+  const { user } = useAuth()
+  const [myInvites, setMyInvites] = useState(null)
 
-  const myMembership = workspace ? workspaces.find((w) => w.id === workspace.id) : null
-  const myInvites = myMembership?.invites_count ?? null
+  useEffect(() => {
+    if (!workspace || !user) return
+    let cancelled = false
+    supabase
+      .from('community_members')
+      .select('invites_count')
+      .eq('workspace_id', workspace.id)
+      .eq('profile_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => { if (!cancelled) setMyInvites(data?.invites_count ?? null) })
+    return () => { cancelled = true }
+  }, [workspace, user])
 
   return (
     <div className={styles.wrap}>

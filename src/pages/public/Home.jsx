@@ -3,16 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabaseClient'
 import { usePublicWorkspace } from '../../contexts/PublicWorkspaceContext'
 import { ShopProducts } from '../../components/public/ShopProducts'
+import { hasFeature } from '../../lib/plans'
 import styles from './Home.module.css'
-
-const FEATURES = [
-  { icon: '📊', title: 'Dashboard completo', desc: 'Analytics de retenção, membros, logs e moderação num só lugar.' },
-  { icon: '🛡️', title: 'Moderação avançada', desc: 'Auto-moderação, anti-raid e deteção de spam configuráveis.' },
-  { icon: '🎟️', title: 'Eventos com RSVP', desc: 'Confirmação de presença, lembretes automáticos e calendário público.' },
-  { icon: '🎮', title: 'XP & Níveis', desc: 'Progressão por mensagens, voz e eventos com recompensas configuráveis.' },
-  { icon: '💬', title: 'Tickets & Suporte', desc: 'Categorias, FAQ automático e SLA de resposta.' },
-  { icon: '🎨', title: 'Identidade própria', desc: 'Cores, logo e banner adaptados à tua comunidade.' },
-]
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -30,7 +22,9 @@ export function Home() {
     let cancelled = false
 
     async function load() {
-      const [{ count }, { data: postRows }, { data: eventRows }, { data: partnerRows }] = await Promise.all([
+      const partnersEnabled = hasFeature(workspace.plan, 'partners_affiliates')
+
+      const [{ count }, { data: postRows }, { data: eventRows }, partnerResult] = await Promise.all([
         supabase
           .from('workspace_members')
           .select('id', { count: 'exact', head: true })
@@ -51,20 +45,22 @@ export function Home() {
           .gte('starts_at', new Date().toISOString())
           .order('starts_at', { ascending: true })
           .limit(3),
-        supabase
-          .from('posts')
-          .select('*')
-          .eq('workspace_id', workspace.id)
-          .eq('type', 'partner')
-          .eq('show_on_homepage', true)
-          .order('published_at', { ascending: false }),
+        partnersEnabled
+          ? supabase
+              .from('posts')
+              .select('*')
+              .eq('workspace_id', workspace.id)
+              .eq('type', 'partner')
+              .eq('show_on_homepage', true)
+              .order('published_at', { ascending: false })
+          : Promise.resolve({ data: [] }),
       ])
 
       if (cancelled) return
       setMemberCount(count ?? null)
       setPosts(postRows || [])
       setEvents(eventRows || [])
-      setPartners(partnerRows || [])
+      setPartners(partnerResult.data || [])
     }
 
     load()
@@ -83,8 +79,7 @@ export function Home() {
             {workspace?.tagline || 'A tua comunidade Discord, gerida como um produto a sério.'}
           </h1>
           <p className={styles.heroSub}>
-            Site próprio, dashboard de staff, analytics de retenção, eventos, tickets e muito mais —
-            tudo num único lugar.
+            Fica a par de tudo o que acontece por aqui — eventos, novidades e a nossa equipa.
           </p>
           <div className={styles.heroActions}>
             {workspace?.discord_invite_url && (
@@ -112,21 +107,6 @@ export function Home() {
             <strong>{events.length > 0 ? events.length : '—'}</strong>
             <span>Eventos a acontecer</span>
           </div>
-        </div>
-      </section>
-
-      {/* ─── Features ─── */}
-      <section className={styles.section}>
-        <span className="page-label">Funcionalidades</span>
-        <h2 className={styles.sectionTitle}>Tudo o que uma comunidade profissional precisa</h2>
-        <div className={styles.featureGrid}>
-          {FEATURES.map((f) => (
-            <div key={f.title} className={styles.featureCard}>
-              <span className={styles.featureIcon} aria-hidden="true">{f.icon}</span>
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
-            </div>
-          ))}
         </div>
       </section>
 

@@ -1,0 +1,45 @@
+.svg { width: 100%; height: auto; display: block; }
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+  color: var(--text-muted);
+  font-size: 13px;
+  border: 1px dashed var(--border-md);
+  border-radius: var(--radius-md);
+}
+
+.barRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.barTrack {
+  flex: 1;
+  width: 100%;
+  max-width: 44px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+  transition: height 0.3s;
+}
+
+.barValue { font-size: 12px; font-weight: 700; margin-top: 6px; }
+.barLabel { font-size: 11px; color: var(--text-muted); margin-top: 2px; text-align: center; }

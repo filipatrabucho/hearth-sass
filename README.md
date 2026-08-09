@@ -2,6 +2,15 @@
 
 React 18 + Vite + React Router + Supabase (Auth/DB) + Netlify Functions.
 
+**Este repositório é o produto** — cada cliente (workspace) tem aqui o seu próprio site
+público + dashboard para gerir a comunidade. O site de marketing/vendas do Hearth
+(hearthgg.netlify.app) é um projeto à parte e não faz parte deste código.
+
+O produto tem 3 planos — **Free, Pro e Growth** (`src/lib/plans.js`). Este repo está
+neste momento focado em deixar o **plano Free completo** antes de avançar para Pro/Growth;
+as funcionalidades Pro+ já implementadas ficam visíveis mas bloqueadas ("🔒 Pro"/"Growth")
+até haver billing.
+
 ## O que já está feito
 
 **Site público** (`/`, `/regras`, `/equipa`, `/eventos`, `/updates`, `/suporte`)
@@ -21,26 +30,35 @@ React 18 + Vite + React Router + Supabase (Auth/DB) + Netlify Functions.
 - Onboarding: criar workspace → convidar o bot Discord → sincronizar (stub, ver limitações)
 - Convite de staff por email (usa o invite nativo do Supabase)
 
-**Dashboard de staff**
-- Layout com sidebar + topbar + workspace switcher
+**Dashboard de staff — plano Free**
+- Layout com sidebar + topbar + workspace switcher, com badges 🔒 Pro/Growth nas
+  secções ainda bloqueadas nesse plano
+- `/dashboard` (Analytics), estatísticas básicas + gráfico de novos membros e de ações
+  de moderação (sem dependências externas, SVG próprio)
+- `/dashboard/members`, roster da comunidade (`community_members`) com avisar/kick/ban,
+  histórico de bans e logs de moderação — adiciona-se manualmente enquanto não há bot
+- `/dashboard/tickets`, fila de tickets vinda de `/suporte`: filtrar por estado, responder
+  (email via Resend opcional), atribuir a mim, mudar estado
 - `/dashboard/events`, CRUD real de eventos
-- `/dashboard/posts`, CRUD de publicações/parceiros com `show_on_homepage`
+- `/dashboard/posts`, CRUD de publicações (parceiros ficam bloqueados a Pro+)
 - `/dashboard/updates`, publicar entradas de changelog
 - `/dashboard/settings/team`, convidar staff + perfil público (título, bio, visibilidade em /equipa)
 - `/dashboard/settings/branding`, identidade visual com pré-visualização em tempo real
-- `/dashboard/settings/welcome`, configuração do welcome flow (ver limitações)
-- Páginas placeholder para Analytics, Membros, Moderação, Tickets, XP & Níveis (dados reais
-  dependem do bot Discord — ver abaixo)
+
+**Bloqueado a Pro/Growth (UI já existe, mostra "disponível no plano X")**
+- `/dashboard/moderation` (auto-moderação/anti-raid), `/dashboard/xp`,
+  `/dashboard/settings/welcome`, secção de parceiros em Publicações e na homepage
 
 ## Limitações conhecidas / próximos passos
 
 - **Bot Discord (discord.js, Fly.io) não está neste repositório.** É um serviço separado.
-  Sem ele: sincronização de membros, welcome flow, auto-moderação, XP e publicação
-  automática de eventos ficam só configuradas na BD, mas não são entregues no Discord.
-  `netlify/functions/sync-workspace.js` é um stub que só marca `last_synced_at`.
-- Analytics, Membros, Moderação, Tickets e XP continuam placeholder — precisam do bot
-  para teres dados reais para mostrar.
-- Stripe/billing (Fase 3 do roadmap) ainda não está implementado.
+  Sem ele: sincronização real de membros (`community_members` fica manual), welcome flow,
+  auto-moderação, XP e publicação automática de eventos ficam só configuradas na BD, mas
+  não são entregues no Discord. `netlify/functions/sync-workspace.js` é um stub.
+- Kick/ban no dashboard só regista o histórico — a expulsão/banimento real no Discord
+  também depende do bot.
+- Stripe/billing (Fase 3 do roadmap) ainda não está implementado — os planos Pro/Growth
+  têm a UI pronta mas não há forma de fazer upgrade a partir do dashboard ainda.
 - Upload de logo/banner é por URL (sem Supabase Storage) por agora.
 
 ---
@@ -50,7 +68,8 @@ React 18 + Vite + React Router + Supabase (Auth/DB) + Netlify Functions.
 ### 1. Criar o projeto Supabase
 
 1. Cria um projeto em [supabase.com](https://supabase.com)
-2. Vai a **SQL Editor** e corre, por ordem, `supabase/schema.sql` e depois `supabase/002_public_site.sql`
+2. Vai a **SQL Editor** e corre, por ordem: `supabase/schema.sql`, `supabase/002_public_site.sql`,
+   `supabase/003_members_moderation.sql`, `supabase/004_tickets.sql`
 3. Vai a **Authentication → URL Configuration** e adiciona:
    - Site URL: `http://localhost:5173` (e depois o teu domínio de produção)
    - Redirect URLs: `http://localhost:5173/auth/callback` (+ produção)

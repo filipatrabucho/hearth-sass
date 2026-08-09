@@ -1,23 +1,25 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { hasFeature, FEATURE_MIN_PLAN } from '../lib/plans'
+import { PlanBadge } from './dashboard/PlanBadge'
 import styles from './DashboardLayout.module.css'
 
 const NAV_ITEMS = [
-  { to: '/dashboard', end: true, icon: '📈', label: 'Analytics' },
-  { to: '/dashboard/members', icon: '👥', label: 'Membros' },
-  { to: '/dashboard/moderation', icon: '🛡️', label: 'Moderação' },
-  { to: '/dashboard/events', icon: '🎟️', label: 'Eventos' },
-  { to: '/dashboard/tickets', icon: '💬', label: 'Tickets' },
-  { to: '/dashboard/xp', icon: '🎮', label: 'XP & Níveis' },
-  { to: '/dashboard/posts', icon: '📰', label: 'Publicações' },
-  { to: '/dashboard/updates', icon: '🗓️', label: 'Updates' },
+  { to: '/dashboard', end: true, icon: '📈', label: 'Analytics', feature: 'dashboard_basic' },
+  { to: '/dashboard/members', icon: '👥', label: 'Membros', feature: 'members_bans_logs' },
+  { to: '/dashboard/moderation', icon: '🛡️', label: 'Moderação', feature: 'automod' },
+  { to: '/dashboard/events', icon: '🎟️', label: 'Eventos', feature: 'dashboard_basic' },
+  { to: '/dashboard/tickets', icon: '💬', label: 'Tickets', feature: 'tickets' },
+  { to: '/dashboard/xp', icon: '🎮', label: 'XP & Níveis', feature: 'xp_levels' },
+  { to: '/dashboard/posts', icon: '📰', label: 'Publicações', feature: 'dashboard_basic' },
+  { to: '/dashboard/updates', icon: '🗓️', label: 'Updates', feature: 'changelog' },
 ]
 
 const SETTINGS_ITEMS = [
-  { to: '/dashboard/settings/team', icon: '👤', label: 'Equipa' },
-  { to: '/dashboard/settings/branding', icon: '🎨', label: 'Identidade visual' },
-  { to: '/dashboard/settings/welcome', icon: '👋', label: 'Welcome flow' },
+  { to: '/dashboard/settings/team', icon: '👤', label: 'Equipa', feature: 'dashboard_basic' },
+  { to: '/dashboard/settings/branding', icon: '🎨', label: 'Identidade visual', feature: 'custom_theme' },
+  { to: '/dashboard/settings/welcome', icon: '👋', label: 'Welcome flow', feature: 'welcome_flow' },
 ]
 
 export function DashboardLayout() {
@@ -60,6 +62,9 @@ export function DashboardLayout() {
             >
               <span className={styles.navIcon} aria-hidden="true">{item.icon}</span>
               {item.label}
+              {!hasFeature(currentWorkspace?.plan, item.feature) && (
+                <PlanBadge plan={FEATURE_MIN_PLAN[item.feature]} />
+              )}
             </NavLink>
           ))}
 
@@ -74,6 +79,9 @@ export function DashboardLayout() {
             >
               <span className={styles.navIcon} aria-hidden="true">{item.icon}</span>
               {item.label}
+              {!hasFeature(currentWorkspace?.plan, item.feature) && (
+                <PlanBadge plan={FEATURE_MIN_PLAN[item.feature]} />
+              )}
             </NavLink>
           ))}
         </nav>

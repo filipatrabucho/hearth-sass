@@ -1,12 +1,13 @@
-import { ComingSoon } from './ComingSoon'
+import { UpgradeNotice } from '../../components/dashboard/UpgradeNotice'
+import { minPlanLabel } from '../../lib/plans'
 
 export function Moderation() {
   return (
-    <ComingSoon
+    <UpgradeNotice
       icon="🛡️"
-      title="Moderação"
-      sub="Auto-moderação, anti-raid, deteção de spam e histórico completo por membro."
-      placeholder="As regras de moderação e os logs vão aparecer aqui."
+      title="Moderação avançada"
+      sub="Auto-moderação, anti-raid e deteção de spam configuráveis. Bans, warns e logs básicos já estão disponíveis em Membros."
+      requiredPlanLabel={minPlanLabel('automod')}
     />
   )
 }

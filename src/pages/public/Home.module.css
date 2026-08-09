@@ -105,23 +105,6 @@
   max-width: 600px;
 }
 
-.featureGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.featureCard {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px;
-}
-.featureCard:hover { background: var(--card-hover); }
-.featureIcon { font-size: 26px; display: block; margin-bottom: 14px; }
-.featureCard h3 { font-family: var(--font-display); font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-.featureCard p { font-size: 14px; color: var(--text-mid); }
-
 .postGrid, .eventGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -188,9 +171,9 @@
 .cta p { color: var(--text-mid); margin-bottom: 28px; }
 
 @media (max-width: 860px) {
-  .featureGrid, .postGrid, .eventGrid { grid-template-columns: repeat(2, 1fr); }
+  .postGrid, .eventGrid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
-  .featureGrid, .postGrid, .eventGrid { grid-template-columns: 1fr; }
+  .postGrid, .eventGrid { grid-template-columns: 1fr; }
   .hero { min-height: 520px; }
 }

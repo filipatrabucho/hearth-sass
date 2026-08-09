@@ -126,6 +126,10 @@ export function AuthProvider({ children }) {
     return callFunction('sync-workspace', { workspaceId })
   }
 
+  async function replyToTicket({ ticketId, body }) {
+    return callFunction('ticket-reply', { ticketId, body })
+  }
+
   const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId) || null
 
   const value = {
@@ -142,6 +146,7 @@ export function AuthProvider({ children }) {
     createWorkspace,
     inviteStaff,
     syncWorkspace,
+    replyToTicket,
     refreshWorkspaces: () => session?.user && loadProfileAndWorkspaces(session.user),
   }
 
