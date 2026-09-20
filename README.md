@@ -39,7 +39,8 @@ a API.
 - `users` - utilizadores autenticados via Discord (`discord_id`, `username`, avatar,
   tokens OAuth, `is_super_admin` para as tuas próprias contas).
 - `clients` - cada comunidade Discord onboarded (`discord_guild_id`, `owner_user_id`,
-  `plan`, `status`).
+  `plan`, `status`, `suspended_reason`, `stripe_customer_id`/`stripe_subscription_id`
+  - estes dois últimos ainda não usados, ver secção "Pagamentos" abaixo).
 - `client_user` - papel (`owner` / `admin` / `staff`) de cada utilizador num client.
 - `modules` - catálogo de funcionalidades (`events`, `bans`, `ban_appeals`, `tickets`,
   `members`, ...).
@@ -52,6 +53,34 @@ a API.
 - `warnings`, `tickets` + `ticket_messages`, `posts` - dados próprios da HearthGG,
   cada um com um efeito espelhado no Discord (DM de aviso, canal privado do ticket,
   mensagem publicada) tratado pelos serviços em `app/Services/*.php`.
+
+## Pagamentos (quem tem acesso a quê)
+
+Há dois níveis de controlo de acesso, ambos verificados por
+`App\Http\Middleware\EnsureModuleAccess` (`->middleware('module:<key>')`) antes de
+qualquer rota `/api/clients/{client}/...` correr:
+
+1. **Conta do client** (`clients.status`: `active` / `suspended` / `cancelled`) - o
+   interruptor geral. Um client suspenso perde acesso a *todos* os módulos,
+   independentemente do que tem pago individualmente. Só um super admin HearthGG
+   pode mudar isto:
+   - `POST /api/clients/{client}/activate`
+   - `POST /api/clients/{client}/suspend` (body opcional: `reason`)
+   - `POST /api/clients/{client}/cancel`
+   - `GET /api/clients?status=suspended` (ou `active`/`cancelled`) para veres
+     rapidamente quem está a pagar e quem não está.
+2. **Módulo individual** (`client_module.payment_status`/`paid_until`) - já
+   documentado acima; controlado por `POST /api/clients/{client}/modules/{module}`.
+
+Isto é tudo manual por agora (o super admin ativa/suspende à mão). Quando ligarmos
+ao **Stripe**, os campos `stripe_customer_id`/`stripe_subscription_id` em `clients`
+e a config em `config/services.php` (`STRIPE_KEY`/`STRIPE_SECRET`/
+`STRIPE_WEBHOOK_SECRET`) já estão prontos - um webhook do Stripe só precisa de
+chamar `Client::activate()`/`suspend()`/`cancel()` (ou `ClientRepository::setModuleEnabled()`
+para um módulo específico) em vez de esperar por um super admin.
+
+Super admins passam sempre por estas verificações (podem entrar num client
+suspenso para o resolver); só o staff do próprio client é bloqueado.
 
 ## Acesso ao Discord de cada cliente
 

@@ -24,11 +24,15 @@ class ClientController extends Controller
     ) {}
 
     /**
-     * Clients the current user can switch into.
+     * Clients the current user can switch into. Optionally filtered by
+     * ?status=active|suspended|cancelled - how HearthGG reviews who's
+     * paying and who isn't.
      */
     public function index(Request $request): JsonResponse
     {
-        return response()->json($this->clients->forUser($request->user()));
+        $this->validate($request, ['status' => ['sometimes', Rule::in(Client::STATUSES)]]);
+
+        return response()->json($this->clients->forUser($request->user(), $request->input('status')));
     }
 
     public function store(Request $request): JsonResponse
@@ -154,6 +158,35 @@ class ClientController extends Controller
         $client->recordBotInstall($request->input('permissions'));
 
         return response()->json($client->refresh());
+    }
+
+    /**
+     * The HearthGG-side payment control: activate/suspend/cancel a
+     * client's account entirely (every module, regardless of its own
+     * payment_status - see EnsureModuleAccess). Manual for now; once
+     * billing moves to Stripe these are where its webhooks will call in.
+     */
+    public function activate(Client $client): JsonResponse
+    {
+        $client->activate();
+
+        return response()->json($client->fresh());
+    }
+
+    public function suspend(Request $request, Client $client): JsonResponse
+    {
+        $this->validate($request, ['reason' => 'nullable|string|max:255']);
+
+        $client->suspend($request->input('reason'));
+
+        return response()->json($client->fresh());
+    }
+
+    public function cancel(Client $client): JsonResponse
+    {
+        $client->cancel();
+
+        return response()->json($client->fresh());
     }
 
     public function removeMember(Request $request, Client $client, User $user): JsonResponse

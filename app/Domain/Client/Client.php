@@ -22,6 +22,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Client extends Model
 {
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_SUSPENDED = 'suspended';
+
+    public const STATUS_CANCELLED = 'cancelled';
+
+    public const STATUSES = [
+        self::STATUS_ACTIVE,
+        self::STATUS_SUSPENDED,
+        self::STATUS_CANCELLED,
+    ];
+
     /** @use HasFactory<ClientFactory> */
     use HasFactory;
 
@@ -51,7 +63,7 @@ class Client extends Model
             'icon_hash' => 'nullable|string|max:255',
             'owner_user_id' => 'required|exists:users,id',
             'plan' => 'required|string|in:free,pro,enterprise',
-            'status' => 'required|string|in:active,suspended,cancelled',
+            'status' => 'required|string|in:'.implode(',', self::STATUSES),
             'trial_ends_at' => 'nullable|date',
         ];
     }
@@ -140,6 +152,34 @@ class Client extends Model
     public function isBotInstalled(): bool
     {
         return $this->bot_installed_at !== null;
+    }
+
+    /**
+     * The account-level gate: a suspended/cancelled client loses access to
+     * every module regardless of individual module payment state. This is
+     * set by a HearthGG super admin today (activate()/suspend()/cancel())
+     * and will be driven by Stripe subscription events once billing moves
+     * there (stripe_customer_id/stripe_subscription_id are already in
+     * place for that).
+     */
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function activate(): void
+    {
+        $this->forceFill(['status' => self::STATUS_ACTIVE, 'suspended_reason' => null])->save();
+    }
+
+    public function suspend(?string $reason = null): void
+    {
+        $this->forceFill(['status' => self::STATUS_SUSPENDED, 'suspended_reason' => $reason])->save();
+    }
+
+    public function cancel(): void
+    {
+        $this->forceFill(['status' => self::STATUS_CANCELLED])->save();
     }
 
     public function recordBotInstall(string $permissions): void

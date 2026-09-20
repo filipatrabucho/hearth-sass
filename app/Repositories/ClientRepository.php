@@ -15,15 +15,19 @@ class ClientRepository
 {
     /**
      * Clients a user can switch into: every client for a super admin,
-     * otherwise only the ones they're a member of.
+     * otherwise only the ones they're a member of. Modules are eager
+     * loaded so the caller (the client switcher, or the HearthGG "which
+     * clients are active/paying" overview) sees per-module payment state
+     * without an extra round trip.
      */
-    public function forUser(User $user): Collection
+    public function forUser(User $user, ?string $status = null): Collection
     {
-        if ($user->is_super_admin) {
-            return Client::query()->orderBy('name')->get();
-        }
+        $query = $user->is_super_admin ? Client::query() : $user->clients();
 
-        return $user->clients()->orderBy('name')->get();
+        return $query->with('modules')
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->orderBy('name')
+            ->get();
     }
 
     public function enabledModules(Client $client): Collection

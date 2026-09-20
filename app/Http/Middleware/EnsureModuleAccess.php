@@ -26,9 +26,20 @@ class EnsureModuleAccess
 
         abort_unless($client instanceof Client, 404);
 
+        $user = $request->user();
+
+        abort_unless($this->authService->userHasPermission($user, $client, ClientUser::ROLE_STAFF), 403);
+
+        // Super admins can still poke around a suspended/unpaid client to
+        // sort out the account itself - only its own staff are gated.
+        if ($user->is_super_admin) {
+            return $next($request);
+        }
+
         abort_unless(
-            $this->authService->userHasPermission($request->user(), $client, ClientUser::ROLE_STAFF),
-            403,
+            $client->isActive(),
+            402,
+            "A conta deste cliente está {$client->status} - os módulos ficam indisponíveis até a HearthGG reativar o acesso.",
         );
 
         abort_unless(

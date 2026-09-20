@@ -37,6 +37,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/clients/{client}/modules/{module}', [ClientController::class, 'toggleModule']);
     Route::post('/clients/{client}/bot/install', [ClientController::class, 'recordBotInstall']);
 
+    // Whether a client is paying at all - the account-level gate every
+    // module sits behind. HearthGG-only (see App\Http\Middleware\EnsureSuperAdmin).
+    Route::middleware('super_admin')->group(function () {
+        Route::post('/clients/{client}/activate', [ClientController::class, 'activate']);
+        Route::post('/clients/{client}/suspend', [ClientController::class, 'suspend']);
+        Route::post('/clients/{client}/cancel', [ClientController::class, 'cancel']);
+    });
+
     // Who on the HearthGG side (owner/admin/staff) can manage this client -
     // not to be confused with the client's own Discord guild members below.
     Route::post('/clients/{client}/team', [ClientController::class, 'addMember']);

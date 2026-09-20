@@ -42,4 +42,14 @@ return [
         'bot_token' => env('DISCORD_BOT_TOKEN'),
     ],
 
+    // Not wired up yet - clients.stripe_customer_id/stripe_subscription_id
+    // and these credentials are just the placeholders for when billing
+    // moves here. Until then, activate()/suspend()/cancel() on Client and
+    // ClientController::toggleModule's payment_status are set by hand.
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
 ];
