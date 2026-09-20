@@ -156,6 +156,24 @@ E aponta `FRONTEND_URL` / `SANCTUM_STATEFUL_DOMAINS` para onde o React vai corre
 Isto só promove, nunca despromove: se tirares o ID do `.env` mais tarde, uma
 conta já promovida mantém o acesso (ver `DiscordAuthController::callback()`).
 
+### Testar as diferenças entre planos (Free/Pro/Enterprise)
+
+Depois de te tornares super admin (passo anterior), corre:
+
+```bash
+php artisan hearthgg:demo-clients
+```
+
+Isto cria (ou atualiza, é idempotente) três clients fictícios - "HearthGG Demo ·
+Free/Pro/Enterprise" - todos teus, cada um com os módulos certos para o seu
+plano (`Free` só `members`; `Pro`/`Enterprise` com tudo: `bans`, `events`,
+`tickets`, `posts`, `analytics`). No frontend, usa o seletor de cliente
+(sidebar/topbar) para saltar entre os três e ver a dashboard, os módulos
+disponíveis e o cartão de upgrade a mudar consoante o plano - sem precisares
+de três contas Discord nem de um bot real instalado (estes guild IDs são
+falsos, por isso as chamadas que dependem do Discord em si, como sincronizar
+membros, não vão funcionar nestes clients de demonstração).
+
 ## Fluxo de autenticação
 
 1. Frontend redireciona o browser para `GET /auth/discord/redirect`.
