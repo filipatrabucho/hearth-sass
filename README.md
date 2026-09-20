@@ -12,7 +12,7 @@ a API.
 ## Stack
 
 - Laravel 12 / PHP 8.2+
-- SQLite em desenvolvimento (troca fácil para MySQL/Postgres via `.env`)
+- MySQL/MariaDB (troca fácil para outro driver via `.env`)
 - Laravel Sanctum (sessão SPA + tokens de API)
 - Laravel Socialite + `socialiteproviders/discord` (login exclusivo via Discord OAuth)
 
@@ -47,14 +47,23 @@ a API.
 
 ## Setup local
 
+Cria primeiro a base de dados no MariaDB (nome igual ao `DB_DATABASE` do `.env`):
+
+```sql
+CREATE DATABASE hearthgg CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
 ```bash
 composer install
 cp .env.example .env
 php artisan key:generate
-touch database/database.sqlite
 php artisan migrate --seed
 php artisan serve
 ```
+
+Confirma no `.env` que `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
+`DB_USERNAME` e `DB_PASSWORD` correspondem ao teu MariaDB (por defeito assume
+`root` sem password em `127.0.0.1:3306`, o normal numa instalação XAMPP).
 
 Preenche no `.env` as credenciais da app Discord (criada no
 [Discord Developer Portal](https://discord.com/developers/applications)):
