@@ -136,6 +136,27 @@ Confirma no `.env` que `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
 `DB_USERNAME` e `DB_PASSWORD` correspondem ao teu MariaDB (por defeito assume
 `root` sem password em `127.0.0.1:3306`, o normal numa instalação XAMPP).
 
+### Dados de demonstração
+
+O `--seed` acima (via `database/seeders/DatabaseSeeder.php`) cria 8 utilizadores
+falsos e 4 clientes com cenários diferentes para veres o frontend com dados reais:
+
+- **Nightfall Gaming** (pro, ativo, bot instalado, todos os módulos) - membros,
+  convites, avisos, tickets (com mensagens) e posts, uma mistura de rascunho/publicado.
+- **Aurora Community** (free, ativo, bot instalado, só `members`+`bans`+`tickets`
+  ativos) - para veres o `RequireModule` do frontend a bloquear os outros.
+- **Skybound Legion** (pro, **suspenso** - `suspended_reason: "Pagamento em atraso"`)
+  - para veres o bloqueio a nível de conta (402 em qualquer módulo para o staff
+  do próprio client; o teu super admin continua a conseguir entrar).
+- **Retro Arcade** (enterprise, ativo, **bot não instalado**) - para veres o fluxo
+  de "adicionar o bot" (409 em qualquer chamada ao Discord até ligares o bot).
+
+Não precisas de estar em nenhum destes clientes: como super admin (ver secção
+acima) vês todos automaticamente em `GET /clients`. Corre
+`php artisan migrate:fresh --seed` para recomeçar do zero (o `db:seed` sozinho,
+sem `:fresh`, falha em dados já semeados por causa dos `unique` - `discord_id`,
+`discord_guild_id`, `email`).
+
 Preenche no `.env` as credenciais da app Discord (criada no
 [Discord Developer Portal](https://discord.com/developers/applications)):
 

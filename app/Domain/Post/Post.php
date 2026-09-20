@@ -4,6 +4,8 @@ namespace App\Domain\Post;
 
 use App\Domain\Client\Client;
 use App\Domain\User\User;
+use Database\Factories\PostFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -13,7 +15,15 @@ class Post extends Model
 
     public const STATUS_PUBLISHED = 'published';
 
+    /** @use HasFactory<PostFactory> */
+    use HasFactory;
+
     protected $guarded = [];
+
+    protected static function newFactory(): PostFactory
+    {
+        return PostFactory::new();
+    }
 
     protected function casts(): array
     {

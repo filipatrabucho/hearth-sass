@@ -4,12 +4,22 @@ namespace App\Domain\Warning;
 
 use App\Domain\Client\Client;
 use App\Domain\User\User;
+use Database\Factories\WarningFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Warning extends Model
 {
+    /** @use HasFactory<WarningFactory> */
+    use HasFactory;
+
     protected $guarded = [];
+
+    protected static function newFactory(): WarningFactory
+    {
+        return WarningFactory::new();
+    }
 
     protected function casts(): array
     {

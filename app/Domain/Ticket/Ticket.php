@@ -4,12 +4,17 @@ namespace App\Domain\Ticket;
 
 use App\Domain\Client\Client;
 use App\Domain\User\User;
+use Database\Factories\TicketFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ticket extends Model
 {
+    /** @use HasFactory<TicketFactory> */
+    use HasFactory;
+
     public const STATUS_OPEN = 'open';
 
     public const STATUS_PENDING = 'pending';
@@ -26,6 +31,11 @@ class Ticket extends Model
     ];
 
     protected $guarded = [];
+
+    protected static function newFactory(): TicketFactory
+    {
+        return TicketFactory::new();
+    }
 
     public static function validationRules(?int $id = null): array
     {

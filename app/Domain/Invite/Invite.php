@@ -3,12 +3,22 @@
 namespace App\Domain\Invite;
 
 use App\Domain\Client\Client;
+use Database\Factories\InviteFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Invite extends Model
 {
+    /** @use HasFactory<InviteFactory> */
+    use HasFactory;
+
     protected $guarded = [];
+
+    protected static function newFactory(): InviteFactory
+    {
+        return InviteFactory::new();
+    }
 
     protected function casts(): array
     {
