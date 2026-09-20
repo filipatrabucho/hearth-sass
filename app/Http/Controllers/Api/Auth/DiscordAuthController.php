@@ -29,22 +29,29 @@ class DiscordAuthController extends Controller
         $discordUser = Socialite::driver('discord')->user();
         $raw = $discordUser->user;
 
-        $user = User::updateOrCreate(
-            ['discord_id' => $discordUser->getId()],
-            [
-                'username' => $raw['username'] ?? $discordUser->getNickname(),
-                'discriminator' => $raw['discriminator'] ?? null,
-                'global_name' => $raw['global_name'] ?? null,
-                'email' => $discordUser->getEmail(),
-                'avatar_hash' => $raw['avatar'] ?? null,
-                'access_token' => $discordUser->token,
-                'refresh_token' => $discordUser->refreshToken,
-                'token_expires_at' => $discordUser->expiresIn ? now()->addSeconds($discordUser->expiresIn) : null,
-                'last_login_at' => now(),
-            ]
-        );
+        $attributes = [
+            'username' => $raw['username'] ?? $discordUser->getNickname(),
+            'discriminator' => $raw['discriminator'] ?? null,
+            'global_name' => $raw['global_name'] ?? null,
+            'email' => $discordUser->getEmail(),
+            'avatar_hash' => $raw['avatar'] ?? null,
+            'access_token' => $discordUser->token,
+            'refresh_token' => $discordUser->refreshToken,
+            'token_expires_at' => $discordUser->expiresIn ? now()->addSeconds($discordUser->expiresIn) : null,
+            'last_login_at' => now(),
+        ];
 
-        Auth::guard('web')->login($user, remember: true);
+        // Only ever promotes, never demotes: leaving this key out entirely
+        // when the ID isn't listed means an admin granted another way
+        // (or a name later removed from the env list) isn't silently
+        // downgraded just by logging back in.
+        if (in_array($discordUser->getId(), config('services.discord.super_admin_ids'), true)) {
+            $attributes['is_super_admin'] = true;
+        }
+
+        $user = User::updateOrCreate(['discord_id' => $discordUser->getId()], $attributes);
+
+        Auth::guard('web')->login($user);
 
         $request->session()->regenerate();
 

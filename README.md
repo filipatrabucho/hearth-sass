@@ -137,6 +137,20 @@ login) - é ele que faz as chamadas à API do Discord em nome de cada client.
 
 E aponta `FRONTEND_URL` / `SANCTUM_STATEFUL_DOMAINS` para onde o React vai correr.
 
+### Tornares-te super admin (para testar)
+
+1. Descobre o teu Discord user ID: no Discord, Definições → Avançadas → ativa o
+   "Modo de Programador"; depois clica com o botão direito no teu avatar/nome em
+   qualquer lado → "Copiar ID de Utilizador".
+2. Põe esse ID em `SUPER_ADMIN_DISCORD_IDS` no `.env` (podes pôr vários,
+   separados por vírgula).
+3. Vai a `http://localhost:8000/auth/discord/redirect` no browser e autoriza a
+   app. Ao voltar já és super admin - confirma com `GET /api/auth/me`
+   (`is_super_admin` deve vir `true`).
+
+Isto só promove, nunca despromove: se tirares o ID do `.env` mais tarde, uma
+conta já promovida mantém o acesso (ver `DiscordAuthController::callback()`).
+
 ## Fluxo de autenticação
 
 1. Frontend redireciona o browser para `GET /auth/discord/redirect`.

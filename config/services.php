@@ -40,6 +40,9 @@ return [
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
         'redirect' => env('DISCORD_REDIRECT_URI'),
         'bot_token' => env('DISCORD_BOT_TOKEN'),
+        // Whoever logs in with one of these Discord IDs is promoted to
+        // is_super_admin on login - see DiscordAuthController::callback().
+        'super_admin_ids' => array_filter(array_map('trim', explode(',', (string) env('SUPER_ADMIN_DISCORD_IDS', '')))),
     ],
 
     // Not wired up yet - clients.stripe_customer_id/stripe_subscription_id
