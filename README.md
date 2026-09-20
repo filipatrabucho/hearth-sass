@@ -43,7 +43,35 @@ a API.
 - `client_user` - papel (`owner` / `admin` / `staff`) de cada utilizador num client.
 - `modules` - catálogo de funcionalidades (`events`, `bans`, `ban_appeals`, `tickets`,
   `members`, ...).
-- `client_module` - quais os módulos ativos (pagos) em cada client.
+- `client_module` - quais os módulos estão ativos em cada client, com o estado de
+  pagamento (`payment_status`: `trialing`/`active`/`past_due`/`canceled`, `paid_until`).
+  Ver `App\Domain\Module\ClientModule::isActive()`.
+- `members` / `invites` - cache local dos membros e convites do servidor de Discord de
+  cada client, atualizado por `App\Services\Discord\MemberService::sync()` /
+  `InviteService::sync()`.
+- `warnings`, `tickets` + `ticket_messages`, `posts` - dados próprios da HearthGG,
+  cada um com um efeito espelhado no Discord (DM de aviso, canal privado do ticket,
+  mensagem publicada) tratado pelos serviços em `app/Services/*.php`.
+
+## Acesso ao Discord de cada cliente
+
+O acesso ao Discord de um client não passa por guardar um "token de acesso" por
+cliente: a HearthGG tem **um único bot** (token em `DISCORD_BOT_TOKEN`) que os
+donos dos servidores instalam no seu próprio Discord. `clients.bot_installed_at` /
+`bot_permissions` registam esse instalação (`Client::recordBotInstall()`,
+`POST /api/clients/{client}/bot/install` - chamado pelo frontend depois do admin
+autorizar o bot no Discord). Todas as chamadas à API do Discord passam por:
+
+- `app/Services/Discord/DiscordClient.php` - wrapper HTTP fino, autenticado como o
+  bot (`Authorization: Bot ...`). Nenhum outro código fala diretamente com o Discord.
+- `app/Services/Discord/*Service.php` - um serviço por módulo (`MemberService`,
+  `RoleService`, `ChannelService`, `EventService`, `AnalyticsService`,
+  `InviteService`, `MessageService`), cada um só com os endpoints do Discord
+  relevantes a esse módulo.
+- `App\Http\Middleware\EnsureModuleAccess` (`->middleware('module:<key>')`) - em
+  toda a rota `/api/clients/{client}/...` que mexe num módulo. Confirma, por esta
+  ordem: (1) o utilizador tem acesso ao client, (2) o módulo está pago/ativo
+  (`Client::hasModuleEnabled()`), (3) o bot está mesmo instalado no servidor.
 
 ## Setup local
 
@@ -72,7 +100,11 @@ Preenche no `.env` as credenciais da app Discord (criada no
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 DISCORD_REDIRECT_URI=http://localhost:8000/auth/discord/callback
+DISCORD_BOT_TOKEN=
 ```
+
+`DISCORD_BOT_TOKEN` é o token do bot da aplicação Discord (separado do OAuth de
+login) - é ele que faz as chamadas à API do Discord em nome de cada client.
 
 E aponta `FRONTEND_URL` / `SANCTUM_STATEFUL_DOMAINS` para onde o React vai correr.
 

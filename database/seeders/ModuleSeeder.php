@@ -19,6 +19,8 @@ class ModuleSeeder extends Seeder
             ['key' => 'bans', 'name' => 'Bans', 'description' => 'Listagem de bans ativos na comunidade.'],
             ['key' => 'ban_appeals', 'name' => 'Pedidos de Unban', 'description' => 'Pedidos de utilizadores para levantar um ban.'],
             ['key' => 'tickets', 'name' => 'Tickets', 'description' => 'Sistema de tickets de suporte.'],
+            ['key' => 'posts', 'name' => 'Publicações', 'description' => 'Anúncios publicados num canal do Discord.'],
+            ['key' => 'analytics', 'name' => 'Analytics', 'description' => 'Estatísticas da comunidade e audit log do Discord.'],
         ];
 
         foreach ($modules as $module) {

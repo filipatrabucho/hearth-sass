@@ -2,13 +2,20 @@
 
 namespace App\Domain\Client;
 
+use App\Domain\Invite\Invite;
+use App\Domain\Member\Member;
+use App\Domain\Module\ClientModule;
 use App\Domain\Module\Module;
+use App\Domain\Post\Post;
+use App\Domain\Ticket\Ticket;
 use App\Domain\User\User;
+use App\Domain\Warning\Warning;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A Client is a Discord community (guild) onboarded onto HearthGG.
@@ -29,6 +36,7 @@ class Client extends Model
     {
         return [
             'trial_ends_at' => 'datetime',
+            'bot_installed_at' => 'datetime',
         ];
     }
 
@@ -81,21 +89,65 @@ class Client extends Model
     }
 
     /**
-     * Modules this client has access to, with the enabled flag.
+     * Modules this client has access to, with the enabled flag and the
+     * payment state backing it.
      */
     public function modules(): BelongsToMany
     {
         return $this->belongsToMany(Module::class, 'client_module')
-            ->withPivot('is_enabled', 'enabled_at')
+            ->using(ClientModule::class)
+            ->withPivot('is_enabled', 'payment_status', 'paid_until', 'enabled_at')
             ->withTimestamps();
     }
 
+    public function members(): HasMany
+    {
+        return $this->hasMany(Member::class);
+    }
+
+    public function invites(): HasMany
+    {
+        return $this->hasMany(Invite::class);
+    }
+
+    public function warnings(): HasMany
+    {
+        return $this->hasMany(Warning::class);
+    }
+
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
+    }
+
+    /**
+     * Whether the client still has real, paid access to a module - not
+     * just whether it's switched on. This is the gate every Discord-bot
+     * and app module endpoint checks (see App\Http\Middleware\EnsureModuleAccess).
+     */
     public function hasModuleEnabled(string $key): bool
     {
-        return $this->modules()
-            ->where('key', $key)
-            ->wherePivot('is_enabled', true)
-            ->exists();
+        $pivot = $this->modules()->where('key', $key)->first()?->pivot;
+
+        return $pivot instanceof ClientModule && $pivot->isActive();
+    }
+
+    public function isBotInstalled(): bool
+    {
+        return $this->bot_installed_at !== null;
+    }
+
+    public function recordBotInstall(string $permissions): void
+    {
+        $this->forceFill([
+            'bot_permissions' => $permissions,
+            'bot_installed_at' => now(),
+        ])->save();
     }
 
     public function iconUrl(): ?string

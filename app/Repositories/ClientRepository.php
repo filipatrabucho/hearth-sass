@@ -31,14 +31,26 @@ class ClientRepository
         return $client->modules()->wherePivot('is_enabled', true)->get();
     }
 
-    public function setModuleEnabled(Client $client, Module $module, bool $enabled): void
+    /**
+     * Switches a module on/off for a client and (optionally) records the
+     * payment state backing that access - see App\Domain\Module\ClientModule.
+     */
+    public function setModuleEnabled(Client $client, Module $module, bool $enabled, ?string $paymentStatus = null, ?string $paidUntil = null): void
     {
-        $client->modules()->syncWithoutDetaching([
-            $module->id => [
-                'is_enabled' => $enabled,
-                'enabled_at' => $enabled ? now() : null,
-            ],
-        ]);
+        $pivot = [
+            'is_enabled' => $enabled,
+            'enabled_at' => $enabled ? now() : null,
+        ];
+
+        if ($paymentStatus !== null) {
+            $pivot['payment_status'] = $paymentStatus;
+        }
+
+        if ($paidUntil !== null) {
+            $pivot['paid_until'] = $paidUntil;
+        }
+
+        $client->modules()->syncWithoutDetaching([$module->id => $pivot]);
     }
 
     public function addMember(Client $client, User $user, string $role): void
