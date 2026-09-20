@@ -11,7 +11,7 @@ a API.
 
 ## Stack
 
-- Laravel 13 / PHP 8.3+
+- Laravel 12 / PHP 8.2+
 - SQLite em desenvolvimento (troca fácil para MySQL/Postgres via `.env`)
 - Laravel Sanctum (sessão SPA + tokens de API)
 - Laravel Socialite + `socialiteproviders/discord` (login exclusivo via Discord OAuth)
