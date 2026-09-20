@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Domain\Client\Client;
 use App\Domain\Client\ClientUser;
+use App\Domain\Module\ClientModule;
 use App\Domain\Module\Module;
 use App\Domain\User\User;
 use App\Http\Controllers\Controller;
@@ -12,6 +13,7 @@ use App\Services\AuthServiceApi;
 use App\Services\ModelServiceApi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
@@ -22,11 +24,15 @@ class ClientController extends Controller
     ) {}
 
     /**
-     * Clients the current user can switch into.
+     * Clients the current user can switch into. Optionally filtered by
+     * ?status=active|suspended|cancelled - how HearthGG reviews who's
+     * paying and who isn't.
      */
     public function index(Request $request): JsonResponse
     {
-        return response()->json($this->clients->forUser($request->user()));
+        $this->validate($request, ['status' => ['sometimes', Rule::in(Client::STATUSES)]]);
+
+        return response()->json($this->clients->forUser($request->user(), $request->input('status')));
     }
 
     public function store(Request $request): JsonResponse
@@ -94,9 +100,19 @@ class ClientController extends Controller
             403
         );
 
-        $this->validate($request, ['enabled' => 'required|boolean']);
+        $this->validate($request, [
+            'enabled' => 'required|boolean',
+            'payment_status' => ['sometimes', 'string', Rule::in(ClientModule::STATUSES)],
+            'paid_until' => 'sometimes|nullable|date',
+        ]);
 
-        $this->clients->setModuleEnabled($client, $module, $request->boolean('enabled'));
+        $this->clients->setModuleEnabled(
+            $client,
+            $module,
+            $request->boolean('enabled'),
+            $request->input('payment_status'),
+            $request->input('paid_until'),
+        );
 
         return response()->json($client->modules()->where('modules.id', $module->id)->first());
     }
@@ -118,6 +134,59 @@ class ClientController extends Controller
         $this->clients->addMember($client, $user, $request->input('role'));
 
         return response()->json($client->users);
+    }
+
+    /**
+     * Called by the frontend once the admin finishes Discord's "add bot to
+     * server" flow: Discord redirects back with `guild_id` and
+     * `permissions` in the query string, which the frontend forwards here.
+     */
+    public function recordBotInstall(Request $request, Client $client): JsonResponse
+    {
+        abort_unless(
+            $this->authService->userHasPermission($request->user(), $client, ClientUser::ROLE_ADMIN),
+            403
+        );
+
+        $this->validate($request, [
+            'guild_id' => 'required|string',
+            'permissions' => 'required|string',
+        ]);
+
+        abort_unless($request->input('guild_id') === $client->discord_guild_id, 422, 'guild_id does not match this client.');
+
+        $client->recordBotInstall($request->input('permissions'));
+
+        return response()->json($client->refresh());
+    }
+
+    /**
+     * The HearthGG-side payment control: activate/suspend/cancel a
+     * client's account entirely (every module, regardless of its own
+     * payment_status - see EnsureModuleAccess). Manual for now; once
+     * billing moves to Stripe these are where its webhooks will call in.
+     */
+    public function activate(Client $client): JsonResponse
+    {
+        $client->activate();
+
+        return response()->json($client->fresh());
+    }
+
+    public function suspend(Request $request, Client $client): JsonResponse
+    {
+        $this->validate($request, ['reason' => 'nullable|string|max:255']);
+
+        $client->suspend($request->input('reason'));
+
+        return response()->json($client->fresh());
+    }
+
+    public function cancel(Client $client): JsonResponse
+    {
+        $client->cancel();
+
+        return response()->json($client->fresh());
     }
 
     public function removeMember(Request $request, Client $client, User $user): JsonResponse

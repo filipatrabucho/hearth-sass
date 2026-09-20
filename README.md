@@ -11,8 +11,8 @@ a API.
 
 ## Stack
 
-- Laravel 13 / PHP 8.3+
-- SQLite em desenvolvimento (troca fácil para MySQL/Postgres via `.env`)
+- Laravel 12 / PHP 8.2+
+- MySQL/MariaDB (troca fácil para outro driver via `.env`)
 - Laravel Sanctum (sessão SPA + tokens de API)
 - Laravel Socialite + `socialiteproviders/discord` (login exclusivo via Discord OAuth)
 
@@ -39,22 +39,93 @@ a API.
 - `users` - utilizadores autenticados via Discord (`discord_id`, `username`, avatar,
   tokens OAuth, `is_super_admin` para as tuas próprias contas).
 - `clients` - cada comunidade Discord onboarded (`discord_guild_id`, `owner_user_id`,
-  `plan`, `status`).
+  `plan`, `status`, `suspended_reason`, `stripe_customer_id`/`stripe_subscription_id`
+  - estes dois últimos ainda não usados, ver secção "Pagamentos" abaixo).
 - `client_user` - papel (`owner` / `admin` / `staff`) de cada utilizador num client.
 - `modules` - catálogo de funcionalidades (`events`, `bans`, `ban_appeals`, `tickets`,
   `members`, ...).
-- `client_module` - quais os módulos ativos (pagos) em cada client.
+- `client_module` - quais os módulos estão ativos em cada client, com o estado de
+  pagamento (`payment_status`: `trialing`/`active`/`past_due`/`canceled`, `paid_until`).
+  Ver `App\Domain\Module\ClientModule::isActive()`.
+- `members` / `invites` - cache local dos membros e convites do servidor de Discord de
+  cada client, atualizado por `App\Services\Discord\MemberService::sync()` /
+  `InviteService::sync()`.
+- `warnings`, `tickets` + `ticket_messages`, `posts` - dados próprios da HearthGG,
+  cada um com um efeito espelhado no Discord (DM de aviso, canal privado do ticket,
+  mensagem publicada) tratado pelos serviços em `app/Services/*.php`.
+- `leads` - submissões do formulário "Começar" do site público (grátis ou pago),
+  guardadas antes (ou em vez) de existir um `Client` para essa pessoa. `POST
+  /api/leads` é o único endpoint desta API que não está atrás de `auth:sanctum`;
+  ver e gerir os leads (`GET/PUT /api/leads/...`) é só para super admins - ver
+  `App\Http\Controllers\Api\LeadController`.
+
+## Pagamentos (quem tem acesso a quê)
+
+Há dois níveis de controlo de acesso, ambos verificados por
+`App\Http\Middleware\EnsureModuleAccess` (`->middleware('module:<key>')`) antes de
+qualquer rota `/api/clients/{client}/...` correr:
+
+1. **Conta do client** (`clients.status`: `active` / `suspended` / `cancelled`) - o
+   interruptor geral. Um client suspenso perde acesso a *todos* os módulos,
+   independentemente do que tem pago individualmente. Só um super admin HearthGG
+   pode mudar isto:
+   - `POST /api/clients/{client}/activate`
+   - `POST /api/clients/{client}/suspend` (body opcional: `reason`)
+   - `POST /api/clients/{client}/cancel`
+   - `GET /api/clients?status=suspended` (ou `active`/`cancelled`) para veres
+     rapidamente quem está a pagar e quem não está.
+2. **Módulo individual** (`client_module.payment_status`/`paid_until`) - já
+   documentado acima; controlado por `POST /api/clients/{client}/modules/{module}`.
+
+Isto é tudo manual por agora (o super admin ativa/suspende à mão). Quando ligarmos
+ao **Stripe**, os campos `stripe_customer_id`/`stripe_subscription_id` em `clients`
+e a config em `config/services.php` (`STRIPE_KEY`/`STRIPE_SECRET`/
+`STRIPE_WEBHOOK_SECRET`) já estão prontos - um webhook do Stripe só precisa de
+chamar `Client::activate()`/`suspend()`/`cancel()` (ou `ClientRepository::setModuleEnabled()`
+para um módulo específico) em vez de esperar por um super admin.
+
+Super admins passam sempre por estas verificações (podem entrar num client
+suspenso para o resolver); só o staff do próprio client é bloqueado.
+
+## Acesso ao Discord de cada cliente
+
+O acesso ao Discord de um client não passa por guardar um "token de acesso" por
+cliente: a HearthGG tem **um único bot** (token em `DISCORD_BOT_TOKEN`) que os
+donos dos servidores instalam no seu próprio Discord. `clients.bot_installed_at` /
+`bot_permissions` registam esse instalação (`Client::recordBotInstall()`,
+`POST /api/clients/{client}/bot/install` - chamado pelo frontend depois do admin
+autorizar o bot no Discord). Todas as chamadas à API do Discord passam por:
+
+- `app/Services/Discord/DiscordClient.php` - wrapper HTTP fino, autenticado como o
+  bot (`Authorization: Bot ...`). Nenhum outro código fala diretamente com o Discord.
+- `app/Services/Discord/*Service.php` - um serviço por módulo (`MemberService`,
+  `RoleService`, `ChannelService`, `EventService`, `AnalyticsService`,
+  `InviteService`, `MessageService`), cada um só com os endpoints do Discord
+  relevantes a esse módulo.
+- `App\Http\Middleware\EnsureModuleAccess` (`->middleware('module:<key>')`) - em
+  toda a rota `/api/clients/{client}/...` que mexe num módulo. Confirma, por esta
+  ordem: (1) o utilizador tem acesso ao client, (2) o módulo está pago/ativo
+  (`Client::hasModuleEnabled()`), (3) o bot está mesmo instalado no servidor.
 
 ## Setup local
+
+Cria primeiro a base de dados no MariaDB (nome igual ao `DB_DATABASE` do `.env`):
+
+```sql
+CREATE DATABASE hearthgg CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
 
 ```bash
 composer install
 cp .env.example .env
 php artisan key:generate
-touch database/database.sqlite
 php artisan migrate --seed
 php artisan serve
 ```
+
+Confirma no `.env` que `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`,
+`DB_USERNAME` e `DB_PASSWORD` correspondem ao teu MariaDB (por defeito assume
+`root` sem password em `127.0.0.1:3306`, o normal numa instalação XAMPP).
 
 Preenche no `.env` as credenciais da app Discord (criada no
 [Discord Developer Portal](https://discord.com/developers/applications)):
@@ -63,9 +134,45 @@ Preenche no `.env` as credenciais da app Discord (criada no
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 DISCORD_REDIRECT_URI=http://localhost:8000/auth/discord/callback
+DISCORD_BOT_TOKEN=
 ```
 
+`DISCORD_BOT_TOKEN` é o token do bot da aplicação Discord (separado do OAuth de
+login) - é ele que faz as chamadas à API do Discord em nome de cada client.
+
 E aponta `FRONTEND_URL` / `SANCTUM_STATEFUL_DOMAINS` para onde o React vai correr.
+
+### Tornares-te super admin (para testar)
+
+1. Descobre o teu Discord user ID: no Discord, Definições → Avançadas → ativa o
+   "Modo de Programador"; depois clica com o botão direito no teu avatar/nome em
+   qualquer lado → "Copiar ID de Utilizador".
+2. Põe esse ID em `SUPER_ADMIN_DISCORD_IDS` no `.env` (podes pôr vários,
+   separados por vírgula).
+3. Vai a `http://localhost:8000/auth/discord/redirect` no browser e autoriza a
+   app. Ao voltar já és super admin - confirma com `GET /api/auth/me`
+   (`is_super_admin` deve vir `true`).
+
+Isto só promove, nunca despromove: se tirares o ID do `.env` mais tarde, uma
+conta já promovida mantém o acesso (ver `DiscordAuthController::callback()`).
+
+### Testar as diferenças entre planos (Free/Pro/Enterprise)
+
+Depois de te tornares super admin (passo anterior), corre:
+
+```bash
+php artisan hearthgg:demo-clients
+```
+
+Isto cria (ou atualiza, é idempotente) três clients fictícios - "HearthGG Demo ·
+Free/Pro/Enterprise" - todos teus, cada um com os módulos certos para o seu
+plano (`Free` só `members`; `Pro`/`Enterprise` com tudo: `bans`, `events`,
+`tickets`, `posts`, `analytics`). No frontend, usa o seletor de cliente
+(sidebar/topbar) para saltar entre os três e ver a dashboard, os módulos
+disponíveis e o cartão de upgrade a mudar consoante o plano - sem precisares
+de três contas Discord nem de um bot real instalado (estes guild IDs são
+falsos, por isso as chamadas que dependem do Discord em si, como sincronizar
+membros, não vão funcionar nestes clients de demonstração).
 
 ## Fluxo de autenticação
 

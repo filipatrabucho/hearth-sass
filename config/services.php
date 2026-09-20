@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This file is for storing the credentials for third party services such
-    | as Resend, Postmark, AWS, and more. This file provides the de facto
+    | as Mailgun, Postmark, AWS and more. This file provides the de facto
     | location for this type of information, allowing packages to have
     | a conventional file to locate the various service credentials.
     |
@@ -40,6 +40,19 @@ return [
         'client_secret' => env('DISCORD_CLIENT_SECRET'),
         'redirect' => env('DISCORD_REDIRECT_URI'),
         'bot_token' => env('DISCORD_BOT_TOKEN'),
+        // Whoever logs in with one of these Discord IDs is promoted to
+        // is_super_admin on login - see DiscordAuthController::callback().
+        'super_admin_ids' => array_filter(array_map('trim', explode(',', (string) env('SUPER_ADMIN_DISCORD_IDS', '')))),
+    ],
+
+    // Not wired up yet - clients.stripe_customer_id/stripe_subscription_id
+    // and these credentials are just the placeholders for when billing
+    // moves here. Until then, activate()/suspend()/cancel() on Client and
+    // ClientController::toggleModule's payment_status are set by hand.
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
 ];
