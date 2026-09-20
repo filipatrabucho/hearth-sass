@@ -42,8 +42,8 @@ a API.
   `plan`, `status`, `suspended_reason`, `stripe_customer_id`/`stripe_subscription_id`
   - estes dois últimos ainda não usados, ver secção "Pagamentos" abaixo).
 - `client_user` - papel (`owner` / `admin` / `staff`) de cada utilizador num client.
-- `modules` - catálogo de funcionalidades (`events`, `bans`, `ban_appeals`, `tickets`,
-  `members`, ...).
+- `modules` - catálogo de funcionalidades: `members`, `bans`, `events`, `tickets`,
+  `posts`, `invites`, `analytics` (chaves iguais ao `ModuleKey` do frontend).
 - `client_module` - quais os módulos estão ativos em cada client, com o estado de
   pagamento (`payment_status`: `trialing`/`active`/`past_due`/`canceled`, `paid_until`).
   Ver `App\Domain\Module\ClientModule::isActive()`.
@@ -53,6 +53,20 @@ a API.
 - `warnings`, `tickets` + `ticket_messages`, `posts` - dados próprios da HearthGG,
   cada um com um efeito espelhado no Discord (DM de aviso, canal privado do ticket,
   mensagem publicada) tratado pelos serviços em `app/Services/*.php`.
+- `leads` - sign-ups do formulário público "get started" do site de marketing (não
+  são clients ainda - ver secção "Leads" abaixo).
+
+## Leads
+
+`POST /api/leads` é a única rota pública da API (fora do grupo `auth:sanctum` em
+`routes/api.php`) - o formulário "get started" da homepage envia para aqui sem
+sessão. Continua protegida pelo CSRF do Sanctum (o frontend faz sempre
+`GET /sanctum/csrf-cookie` primeiro) e tem `throttle:10,1` contra spam.
+
+Rever/gerir leads é trabalho da HearthGG, não de um client, por isso
+`GET /api/leads` (com `?status=new|contacted|converted|archived`),
+`PUT /api/leads/{lead}/status` e `DELETE /api/leads/{lead}` estão atrás de
+`super_admin`.
 
 ## Pagamentos (quem tem acesso a quê)
 

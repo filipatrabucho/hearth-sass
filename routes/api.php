@@ -8,12 +8,19 @@ use App\Http\Controllers\Api\Discord\EventController;
 use App\Http\Controllers\Api\Discord\InviteController;
 use App\Http\Controllers\Api\Discord\MemberController;
 use App\Http\Controllers\Api\Discord\RoleController;
+use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\ModuleController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WarningController;
 use Illuminate\Support\Facades\Route;
+
+// Public: the marketing site's "get started" form. Still goes through
+// Sanctum's CSRF check (statefulApi(), applied to the whole api group in
+// bootstrap/app.php) even without auth:sanctum - the frontend primes it
+// with GET /sanctum/csrf-cookie first. Throttled against form spam.
+Route::post('/leads', [LeadController::class, 'store'])->middleware('throttle:10,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [DiscordAuthController::class, 'me']);
@@ -43,6 +50,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/clients/{client}/activate', [ClientController::class, 'activate']);
         Route::post('/clients/{client}/suspend', [ClientController::class, 'suspend']);
         Route::post('/clients/{client}/cancel', [ClientController::class, 'cancel']);
+
+        // Reviewing sign-ups from the public lead form above - HearthGG's
+        // own business, not a client's.
+        Route::get('/leads', [LeadController::class, 'index']);
+        Route::put('/leads/{lead}/status', [LeadController::class, 'updateStatus']);
+        Route::delete('/leads/{lead}', [LeadController::class, 'destroy']);
     });
 
     // Who on the HearthGG side (owner/admin/staff) can manage this client -
