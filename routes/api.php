@@ -8,12 +8,17 @@ use App\Http\Controllers\Api\Discord\EventController;
 use App\Http\Controllers\Api\Discord\InviteController;
 use App\Http\Controllers\Api\Discord\MemberController;
 use App\Http\Controllers\Api\Discord\RoleController;
+use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\ModuleController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WarningController;
 use Illuminate\Support\Facades\Route;
+
+// Public: the marketing site's "get started" form, paid or free. No auth -
+// anyone can submit one. See App\Http\Controllers\Api\LeadController.
+Route::post('/leads', [LeadController::class, 'store']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [DiscordAuthController::class, 'me']);
@@ -43,6 +48,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/clients/{client}/activate', [ClientController::class, 'activate']);
         Route::post('/clients/{client}/suspend', [ClientController::class, 'suspend']);
         Route::post('/clients/{client}/cancel', [ClientController::class, 'cancel']);
+    });
+
+    // Reviewing/following up on marketing site leads - HearthGG-only.
+    Route::middleware('super_admin')->prefix('/leads')->group(function () {
+        Route::get('/', [LeadController::class, 'index']);
+        Route::get('/{lead}', [LeadController::class, 'show']);
+        Route::put('/{lead}/status', [LeadController::class, 'updateStatus']);
+        Route::delete('/{lead}', [LeadController::class, 'destroy']);
     });
 
     // Who on the HearthGG side (owner/admin/staff) can manage this client -

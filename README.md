@@ -53,6 +53,11 @@ a API.
 - `warnings`, `tickets` + `ticket_messages`, `posts` - dados próprios da HearthGG,
   cada um com um efeito espelhado no Discord (DM de aviso, canal privado do ticket,
   mensagem publicada) tratado pelos serviços em `app/Services/*.php`.
+- `leads` - submissões do formulário "Começar" do site público (grátis ou pago),
+  guardadas antes (ou em vez) de existir um `Client` para essa pessoa. `POST
+  /api/leads` é o único endpoint desta API que não está atrás de `auth:sanctum`;
+  ver e gerir os leads (`GET/PUT /api/leads/...`) é só para super admins - ver
+  `App\Http\Controllers\Api\LeadController`.
 
 ## Pagamentos (quem tem acesso a quê)
 
